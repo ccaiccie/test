@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAML Authentication Sequence Diagram</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 20px auto;
+            display: block;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <button id="nextBtn">Next Step</button>
+    <h1>SAML Authentication Sequence Diagram</h1>
+    <canvas id="diagramCanvas" width="1200" height="700"></canvas>
+
+    <script>
+        const canvas = document.getElementById("diagramCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const participants = [
+            { name: "User" },
+            { name: "Service Provider (SP)" },
+            { name: "Identity Provider (IdP)" },
+            { name: "Resource" }
+        ];
+
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const horizontalSpacing = canvasWidth / (participants.length + 1);
+        const startY = 100;
+        const dottedLineTop = startY + 40;
+        const stepSpacing = 50;
+
+        participants.forEach((p, i) => {
+            p.x = (i + 1) * horizontalSpacing;
+            p.y = startY;
+        });
+
+        const steps = [
+            { from: "User", to: "Service Provider (SP)", text: "1. User requests access to a resource" },
+            { from: "Service Provider (SP)", to: "Identity Provider (IdP)", text: "2. SP redirects user to IdP with a SAML AuthnRequest" },
+            { from: "User", to: "Identity Provider (IdP)", text: "3. User logs in and authenticates at IdP" },
+            { from: "Identity Provider (IdP)", to: "User", text: "4. IdP sends SAML Response with Assertion to the user" },
+            { from: "User", to: "Service Provider (SP)", text: "5. User forwards SAML Response to SP" },
+            { from: "Service Provider (SP)", to: "Service Provider (SP)", text: "6. SP validates SAML Response and Assertion" },
+            { from: "Service Provider (SP)", to: "Service Provider (SP)", text: "7. SP extracts user attributes and roles from Assertion" },
+            { from: "Service Provider (SP)", to: "Resource", text: "8. SP forwards access request to Resource" },
+            { from: "Resource", to: "Service Provider (SP)", text: "9. Resource confirms access is granted" },
+            { from: "Service Provider (SP)", to: "User", text: "10. SP grants access to the requested resource" }
+        ];
+
+        let currentStep = 0;
+
+        function drawParticipants() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            participants.forEach((participant) => {
+                ctx.beginPath();
+                ctx.rect(participant.x - 70, participant.y - 20, 140, 40);
+                ctx.fillStyle = "#f4f4f4";
+                ctx.fill();
+                ctx.stroke();
+                ctx.closePath();
+
+                ctx.fillStyle = "#000";
+                ctx.font = "14px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(participant.name, participant.x, participant.y + 5);
+
+                ctx.beginPath();
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(participant.x, dottedLineTop);
+                ctx.lineTo(participant.x, canvasHeight - 50);
+                ctx.strokeStyle = "#aaa";
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.closePath();
+            });
+        }
+
+        function drawArrow(from, to, text, stepIndex) {
+            const fromParticipant = participants.find((p) => p.name === from);
+            const toParticipant = participants.find((p) => p.name === to);
+
+            if (fromParticipant && toParticipant) {
+                const { x: x1 } = fromParticipant;
+                const { x: x2 } = toParticipant;
+                const y = dottedLineTop + stepSpacing * stepIndex;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y);
+                ctx.lineTo(x2, y);
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+
+                const arrowSize = 10;
+                const direction = x2 > x1 ? 1 : -1;
+                ctx.beginPath();
+                ctx.moveTo(x2, y);
+                ctx.lineTo(x2 - direction * arrowSize, y - arrowSize / 2);
+                ctx.lineTo(x2 - direction * arrowSize, y + arrowSize / 2);
+                ctx.lineTo(x2, y);
+                ctx.fillStyle = "#000";
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.font = "12px Arial";
+                ctx.fillStyle = "#000";
+                ctx.textAlign = "center";
+                ctx.fillText(text, (x1 + x2) / 2, y - 10);
+            }
+        }
+
+        function drawStep() {
+            drawParticipants();
+
+            for (let i = 0; i <= currentStep; i++) {
+                const { from, to, text } = steps[i];
+                drawArrow(from, to, text, i + 1);
+            }
+
+            if (currentStep === steps.length - 1) {
+                document.getElementById("nextBtn").style.display = "none";
+            }
+        }
+
+        drawStep();
+
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                drawStep();
+            }
+        });
+    </script>
+</body>
+</html>
